@@ -5,45 +5,44 @@ const getRecommendations = (
   products
 ) => {
   const productScore = {}
-  // const productFeaturesMap = {}
-  // const productPreferencesMap = {}
+  const selectedPreferencesSet = new Set(formData.selectedPreferences);
+  const selectedFeaturesSet = new Set(formData.selectedFeatures);
 
   products.forEach((product) => {
-    productScore[product.id] = 0;
-    // productFeaturesMap[product.id] = product.features;
-    // productPreferencesMap[product.id] = product.preferences;
-  });
-
-  products.forEach((product) => {
+    let score = 0;
     product.preferences.forEach((preference) => {
-      if (formData.selectedPreferences?.includes(preference)) {
-        productScore[product.id] += 1;
+      if (selectedPreferencesSet.has(preference)) {
+        score += 1;
       }
     });
+
     product.features.forEach((feature) => {
-      if (formData.selectedFeatures?.includes(feature)) {
-        productScore[product.id] += 1;
+      if (selectedFeaturesSet.has(feature)) {
+        score += 1;
       }
     });
+
+    productScore[product.id] = score;
   });
 
 
   const topProductsIds = [];
   if(formData.selectedRecommendationType === 'SingleProduct') {
     let higherScore = 0;
-    Object.entries(productScore).forEach(item => {
-      if(higherScore <= item[1]){
-        topProductsIds[0] = Number(item[0]);
-        higherScore = item[1];
+    products.forEach(product => {
+      const score = productScore[product.id];
+      if(higherScore <= score){
+        topProductsIds[0] = Number(product.id);
+        higherScore = score;
       }
     })
   }
   if(formData.selectedRecommendationType === 'MultipleProducts') {
-    Object.entries(productScore).forEach((product) => {
-      if(product[1] > 0) {
-        topProductsIds.push(Number(product[0]));
-      }
-    });
+    topProductsIds.push(
+      ...products
+        .filter(product => productScore[product.id] > 0)
+        .map(product => Number(product.id))
+    );
   }
 
   const topProducts = products.filter((product) => topProductsIds.includes(product.id));
